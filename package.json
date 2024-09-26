@@ -6,7 +6,9 @@
     "dev": "rsbuild dev --open",
     "build": "rsbuild build",
     "preview": "rsbuild preview",
-    "generate-routes": "tsr generate"
+    "generate-routes": "tsr generate",
+    "lint": "biome lint src ",
+    "lint:fix": "biome format src "
   },
   "dependencies": {
     "class-variance-authority": "^0.7.0",
@@ -20,6 +22,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.2",
     "@formatjs/cli-lib": "^6.4.2",
     "@rsbuild/core": "1.0.7",
     "@rsbuild/plugin-react": "^1.0.1",

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { Compiler as RspackCompiler, RspackPluginInstance } from '@rspack/core'
 import { sync as globSync } from 'fast-glob'
-import { compileAndWrite, CompileCLIOpts, extractAndWrite, ExtractCLIOptions } from '@formatjs/cli-lib'
+import { compileAndWrite, type CompileCLIOpts, extractAndWrite, type ExtractCLIOptions } from '@formatjs/cli-lib'
 const PLUGIN_NAME = 'I18nRefresh'
 
 export interface I18nRefreshProps {
@@ -52,7 +52,7 @@ class I18nManager implements RspackPluginInstance {
   /**
    * Base locale for internationalization.
    */
-  defaultLocale: string = 'en-US'
+  defaultLocale = 'en-US'
 
   /**
    * List of supported supportedLocales .
@@ -62,11 +62,11 @@ class I18nManager implements RspackPluginInstance {
   /**
    * Output directory for generated locale files (optional).
    */
-  outputDir: string = './src/assets/i18n'
+  outputDir = './src/assets/i18n'
 
   watchPatterns: string[] = ['messages.tsx', 'message.tsx', 'messages.ts', 'message.ts']
 
-  sourcePattern: string = 'src/**/*.{ts,tsx}'
+  sourcePattern = 'src/**/*.{ts,tsx}'
 
   /**
    * Constructor for I18nRefresh plugin.
@@ -179,13 +179,13 @@ class I18nManager implements RspackPluginInstance {
     } catch (error) {
     }
 
-    Object.keys(baseJsonData).forEach((key) => {
+    for (const key of Object.keys(baseJsonData)) {
       if (prevTargetJsonData[key]) {
         targetJsonData[key] = prevTargetJsonData[key]
       } else {
         targetJsonData[key] = baseJsonData[key]
       }
-    })
+    }
 
     const mergedJsonStr = `${JSON.stringify(targetJsonData, null, 2)}\n`
     await fs.writeFile(nextLocaleFilePath, mergedJsonStr)
