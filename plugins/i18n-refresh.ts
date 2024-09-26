@@ -3,51 +3,47 @@ import path from 'node:path'
 import type { Compiler as RspackCompiler, RspackPluginInstance } from '@rspack/core'
 import { sync as globSync } from 'fast-glob'
 import { compileAndWrite, CompileCLIOpts, extractAndWrite, ExtractCLIOptions } from '@formatjs/cli-lib'
-const PLUGIN_NAME = 'intl-refresh'
+const PLUGIN_NAME = 'I18nRefresh'
 
-/**
- * Options for the IntlRefresh plugin.
- */
-export interface IntlRefreshProps {
+export interface I18nRefreshProps {
   /**
-   * supportedLocales  to translate.
+   * Locales to support for translation.
    * @default ['zh-CN']
    */
   supportedLocales?: string[];
 
   /**
-   * Base locale.
+   * Base locale for internationalization.
    * @default 'en-US'
    */
   defaultLocale?: string;
 
   /**
-   * Glob files path
+   * Glob pattern for source files to process.
+   * @default 'src/***.{ts,tsx}'
    */
-  source?: string;
+  sourcePattern?: string;
 
   /**
-   * Output directory.
+   * Output directory for generated locale files.
    * @default './src/assets/i18n'
    */
   outputDir?: string;
 
   /**
-   * Files to watch for changes. When a file changes, the IntlRefresh plugin will
-   * re-run to regenerate the extracted messages
-   * @default 'messages.tsx', 'message.tsx', 'messages.ts', 'message.ts'
+   * Files to watch for changes. When these files change, the plugin will
+   * re-run to regenerate the extracted messages.
+   * @default ['messages.tsx', 'message.tsx', 'messages.ts', 'message.ts']
    */
-  watchedFiles?: string[];
+  watchPatterns?: string[];
 }
 
 
 
-
-
 /**
- * IntlRefresh plugin class.
+ * I18nManager plugin class.
  */
-class IntlRefresh implements RspackPluginInstance {
+class I18nManager implements RspackPluginInstance {
   /**
    * Plugin name.
    */
@@ -61,50 +57,53 @@ class IntlRefresh implements RspackPluginInstance {
   /**
    * List of supported supportedLocales .
    */
-  supportedLocales : string[] = []
+  supportedLocales: string[] = []
 
   /**
    * Output directory for generated locale files (optional).
    */
   outputDir: string = './src/assets/i18n'
 
-  watchedFiles: string[] = ['messages.tsx', 'message.tsx', 'messages.ts', 'message.ts']
+  watchPatterns: string[] = ['messages.tsx', 'message.tsx', 'messages.ts', 'message.ts']
 
-  source: string = 'src/**/*.{ts,tsx}'
+  sourcePattern: string = 'src/**/*.{ts,tsx}'
+
   /**
-   * Constructor for IntlRefresh plugin.
-   * @param props - IntlRefresh plugin properties.
+   * Constructor for I18nRefresh plugin.
+   * @param props - I18nRefresh plugin properties.
    */
-  constructor(props: IntlRefreshProps) {
-    this.defaultLocale = props.defaultLocale || 'en-US'
-    this.supportedLocales  = props.supportedLocales  || ['zh-CN', 'en-US']
-    this.outputDir = props.outputDir || './src/assets/i18n'
-    this.watchedFiles = props.watchedFiles || ['messages.tsx', 'message.tsx', 'messages.ts', 'message.ts']
-    this.source = props.source || 'src/**/*.{ts,tsx}'
+  constructor(props: I18nRefreshProps) {
+    this.defaultLocale = props.defaultLocale ?? 'en-US'
+    this.supportedLocales = props.supportedLocales ?? ['zh-CN', 'en-US']
+    this.outputDir = props.outputDir ?? './src/assets/i18n'
+    this.watchPatterns = props.watchPatterns ?? ['messages.tsx', 'message.tsx', 'messages.ts', 'message.ts']
+    this.sourcePattern = props.sourcePattern ?? 'src/**/*.{ts,tsx}'
   }
 
-   /**
-   * Apply the plugin to the Rspack compiler.
-   *
-   * Listens to the `watchRun` hook and checks if any of the watched files
-   * (e.g. messages.tsx, message.tsx, messages.ts, message.ts) have changed.
-   * If a change is detected, calls the `buildBaseJson` method to regenerate
-   * the base locale JSON file.
-   * @param compiler - Rspack compiler instance.
-   */
+  /**
+  * Apply the plugin to the Rspack compiler.
+  *
+  * Listens to the `watchRun` hook and checks if any of the watched files
+  * (e.g. messages.tsx, message.tsx, messages.ts, message.ts) have changed.
+  * If a change is detected, calls the `buildBaseJson` method to regenerate
+  * the base locale JSON file.
+  * @param compiler - Rspack compiler instance.
+  */
   apply(compiler: RspackCompiler) {
     compiler.hooks.watchRun.tap(PLUGIN_NAME, (compiler) => {
       const changedFiels = Array.from(compiler.modifiedFiles || [])
-      const isMessageChanged = changedFiels.some((file) => this.watchedFiles.some(w => file.endsWith(w)))
+      const isMessageChanged = changedFiels.some((file) => this.watchPatterns.some(w => file.endsWith(w)))
       if (isMessageChanged) {
         this.buildBaseJson()
       }
     })
+
+
   }
 
- 
+
   async buildBaseJson() {
-    const files = globSync(this.source, {
+    const files = globSync(this.sourcePattern, {
       ignore: ['**/node_modules/**', '**/dist/**', '**/*.d.ts'],
     })
 
@@ -127,15 +126,15 @@ class IntlRefresh implements RspackPluginInstance {
 
       await extractAndWrite(files, extractOpts)
       await compileAndWrite([tempFile], compileOpts)
-
       await fs.appendFile(outputJsonFile, '\n')
+
+      const restLocales = this.supportedLocales.filter((locale) => locale !== this.defaultLocale)
+      await this.buildLocalesJson(outputJsonFile, restLocales)
+
     } catch (error) {
       console.error(error)
     }
 
-
-    const restLocales = this.supportedLocales .filter((locale) => locale !== this.defaultLocale)
-    await this.buildLocalesJson(outputJsonFile, restLocales)
   }
 
   /**
@@ -148,15 +147,16 @@ class IntlRefresh implements RspackPluginInstance {
    */
   async buildLocalesJson(baseFilePath: string, locales: string[]): Promise<void> {
 
-    console.info('baseFilePath: ', baseFilePath)
-    const baseJsonData: Record<string, string> = JSON.parse((await fs.readFile(baseFilePath, 'utf8')).toString())
+    const baseJsonData: Record<string, string> = JSON.parse((await fs.readFile(baseFilePath, 'utf8')))
 
     for (const locale of locales) {
-
-      const nextLocaleFilePath = path.join(this.outputDir, `${locale}.json`)
-      await this.generateLocaleJson(baseJsonData, nextLocaleFilePath)
-
-      console.log(`Locale ${locale} generated`)
+      const nextLocaleFilePath = path.join(this.outputDir, `${locale}.json`);
+      try {
+        await this.generateLocaleJson(baseJsonData, nextLocaleFilePath);
+        console.log(`${PLUGIN_NAME}: Locale ${locale} generated successfully`);
+      } catch (error) {
+        console.error(`${PLUGIN_NAME}: Error generating locale ${locale}:`, error);
+      }
     }
   }
 
@@ -192,4 +192,4 @@ class IntlRefresh implements RspackPluginInstance {
   }
 }
 
-export default IntlRefresh
+export default I18nManager

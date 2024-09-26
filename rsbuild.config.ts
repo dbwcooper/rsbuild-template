@@ -1,14 +1,14 @@
 import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { TanStackRouterRspack } from '@tanstack/router-plugin/rspack'
-import IntlRefresh from './plugins/intl-refresh';
+import I18nRefresh from './plugins/i18n-refresh';
 
 export default defineConfig({
   plugins: [pluginReact()],
   
   tools: {
     rspack: {
-      plugins: [TanStackRouterRspack(), new IntlRefresh({})],
+      plugins: [TanStackRouterRspack(), new I18nRefresh({})],
     },
   },
 });
