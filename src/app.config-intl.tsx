@@ -1,6 +1,6 @@
 import { createContext, useEffect, useMemo, useState } from "react"
 import { IntlProvider } from "react-intl"
-import { I18N_CODE } from "./lib/i18n"
+import { I18N_CODE } from "@/lib/i18n"
 
 interface AppIntlContextProps {
   locale: I18N_CODE
