@@ -1,6 +1,6 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { router } from "./router";
-import AppConfigIntl from "./App.ConfigIntl";
+import AppConfigIntl from "./app.config-intl";
 
 export default function App() {
 	return (

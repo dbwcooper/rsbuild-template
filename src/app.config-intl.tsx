@@ -21,14 +21,9 @@ const AppConfigIntl = ({ children }: { children: React.ReactNode }) => {
   const [locale, setLocale] = useState<I18N_CODE>(I18N_CODE.EN_US)
   const [messages, setMessages] = useState<Record<string, string>>({})
 
-  useEffect(() => {
-    getDefalutMessages(locale).then(setMessages)
-  }, [locale])
+  useEffect(() => { getDefalutMessages(locale).then(setMessages) }, [locale])
 
-  const ctxValue = useMemo(() => ({
-    locale,
-    setLocale,
-  }), [locale])
+  const ctxValue = useMemo(() => ({ locale, setLocale }), [locale])
 
   return (
     <AppIntlContext.Provider value={ctxValue}>
