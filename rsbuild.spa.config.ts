@@ -1,10 +1,11 @@
 import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
+import { pluginSass } from '@rsbuild/plugin-sass';
 import { TanStackRouterRspack } from '@tanstack/router-plugin/rspack';
 import I18nRefresh from './plugins/i18n-refresh';
 
 export default defineConfig({
-  plugins: [pluginReact()],
+  plugins: [pluginReact(), pluginSass()],
   source: {
     entry: {
       'main-spa': './src/index.tsx',
@@ -14,7 +15,6 @@ export default defineConfig({
     target: 'web',
     cleanDistPath: true,
   },
-  // externals: ['single-spa', 'react', 'react-dom'],
   
   performance: {
     chunkSplit: {
